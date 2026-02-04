@@ -41,7 +41,7 @@ def add_binary_target_from_cut(df, source_col, target_col, bins, labels):
 
 
 def split_train_test_tune(df, target_col, train_size, tune_size):
-	# split into train, tune, and test with same target mix
+	# split into train, tune, and test with same target mix or in other works same prevalence of the target variable in each set. 
 	train_df, test_df = train_test_split(
 		df,
 		train_size=train_size,
