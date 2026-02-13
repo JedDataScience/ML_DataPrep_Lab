@@ -117,7 +117,7 @@ grad_data2["grad_100_value"].value_counts()
 
 # The Question that I'll be answering with this data is if we can predict if a school is a 4 year or 2 year institution based on the other features in the dataset. 
 # Those other features will be awards_per_value and grad_100_values
-
+#=================================================================================================================================================
 
 
 #%%
@@ -150,6 +150,7 @@ def scale_numeric_columns_minmax(df):
 	return df
 
 grad_data_std = scale_numeric_columns_minmax(grad_data2)
+
 
 
 # %%
@@ -196,10 +197,11 @@ plt.show()
 
 
 '''
-
+#===================================================================================================================
 # 4.No code question: If you adjusted the k hyperparameter what do you think would
 happen to the threshold function? Would the confusion matrix look the same at the same threshold 
 levels or not? Why or why not?
+#===================================================================================================================
 
 Adjusting the K hyperparameter changes the number of neighbors considered when making predictions. 
 A smaller K value (like 1 or 3) makes the model more sensitive to local patterns in the data, which can lead to overfitting. 
@@ -208,3 +210,91 @@ So if we change K, the decision boundary of the model shifts, which in turn affe
 This means that the confusion matrix would likely look different at the same threshold levels because the predicted class labels would change based on the new probabilities.
 
 '''
+
+
+
+'''
+#===================================================================================================================
+# 5. Evaluate the results using the confusion matrix. Then "walk" through your question, summarize what 
+concerns or positive elements do you have about the model as it relates to your question?
+#===================================================================================================================
+
+The confusion matrix shows how well the model is performing in terms of true positives, true negatives, false positives, and false negatives.
+The overall performance of the model was decent, 498/675 = 73.8% of the predictions were correct.
+The model seems to be better at predicting 4-year institutions than 2-year institutions, as there are more true positives for 4-year institutions than true negatives for 2-year institutions.
+This could be due to the fact that there are more 4-year institutions in the dataset, which may have led to a bias in the model.
+A concern I have about the model is that it may not generalize well to new data, especially if the distribution of 4-year and 2-year institutions in the new data is different from the training data.
+A positive element of the model is that it does show some ability to distinguish between 4-year and 2-year institutions based on the features used, which suggests that there is some signal in the data that the model is able to capture.
+But as we saw in the scatterplot, there is a lot of overlap between the two types of institutions in terms of awards_per_value and grad_100_value, which may limit the model's ability to make accurate predictions.
+
+'''
+
+
+
+
+#%%
+#===================================================================================================================
+# 6. Create two functions 
+#===================================================================================================================
+
+# Function 1: clean/scale and split
+def prepare_train_test(df, feature_cols, target_col, test_size=0.2, random_state=42):
+    data_std = scale_numeric_columns_minmax(df)
+    X = data_std[feature_cols]
+    y = data_std[target_col].astype(str)
+    return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+
+
+# Function 2: train/test with different k and threshold
+def knn_test_with_threshold(X_train, X_test, y_train, y_test, k=3, threshold=0.5, positive_label="4-year"):
+    model = KNeighborsClassifier(n_neighbors=k)
+    model.fit(X_train, y_train)
+    class_labels = list(model.classes_)
+    if positive_label not in class_labels:
+        positive_label = class_labels[1]
+    positive_index = class_labels.index(positive_label)
+    proba_positive = model.predict_proba(X_test)[:, positive_index]
+    y_pred = np.where(proba_positive >= threshold, positive_label, class_labels[0])
+    cm = confusion_matrix(y_test, y_pred, labels=class_labels)
+    accuracy = (y_pred == np.array(y_test)).mean()
+    return {
+        "model": model,
+        "k": k,
+        "threshold": threshold,
+        "positive_label": positive_label,
+        "confusion_matrix": cm,
+        "accuracy": accuracy,
+    }
+
+
+#===================================================================================================================
+#7. Use the functions to test several k and threshold combinations
+#===================================================================================================================
+
+
+#%%
+# Use the functions to test several k and threshold combinations
+feature_cols = ["awards_per_value", "grad_100_value"]
+X_train, X_test, y_train, y_test = prepare_train_test(grad_data2, feature_cols, "level")
+
+results = []
+for k in [1, 3, 5, 7, 9]:
+	for threshold in [0.3, 0.5, 0.7]:
+		result = knn_test_with_threshold(X_train, X_test, y_train, y_test, k=k, threshold=threshold, positive_label="4-year")
+		results.append(result)
+
+results
+
+#%%
+'''
+#===================================================================================================================
+# 7. How well does the model perform? Did the interaction of the adjusted thresholds and k values help the model? Why or why not?
+#===================================================================================================================
+
+The model's performance varied with different k and threshold combinations.
+Generally, lower k values (like 1 or 3) tended to yield lower accuracy due to overfitting, while moderate k values (like 5 or 7) provided a better balance between bias and variance.
+Noticed that still the threshold adjustments had a significant impact on the confusion matrix, particularly in terms of false positives and false negatives.
+Lowering the threshold increased sensitivity (true positive rate) but also increased false positives, while raising the threshold had the opposite effect. But the keeping the threshold around 0.5 generally provided a good balance.
+And at K = 7 and threshold = 0.5, the model achieved the highest accuracy of around 75%.     
+'''
+# %%
