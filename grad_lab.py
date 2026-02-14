@@ -298,3 +298,25 @@ Lowering the threshold increased sensitivity (true positive rate) but also incre
 And at K = 7 and threshold = 0.5, the model achieved the highest accuracy of around 75%.     
 '''
 # %%
+
+
+'''
+====================================================================================================================
+8. Choose another variable as the target in the dataset and create another kNN model using the two functions you created instep 7.
+====================================================================================================================
+Ill use "control" as the new target variable, which indicates whether the institution is public or private. 
+This will allow us to see if we can predict the control type of the institution based on the same features.
+Those features being awards_per_value and grad_100_value, which we used before.
+'''
+
+
+#%%
+# Use a different target: predict control type
+feature_cols_control = ["awards_per_value", "grad_100_value"]
+X_train_c, X_test_c, y_train_c, y_test_c = prepare_train_test(grad_data2, feature_cols_control, "control")
+
+control_result = knn_test_with_threshold(X_train_c, X_test_c, y_train_c, y_test_c, k=7, threshold=0.5, positive_label="Public")
+control_result
+
+# The accuracy for predicting control type with the features I selected was around 50%, which is not very good. 
+# This suggests that the features awards_per_value and grad_100_value may not be strong predictors of whether an institution is public or private.
